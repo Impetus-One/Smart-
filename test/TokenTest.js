@@ -98,6 +98,13 @@ contract('NudgeToken', async (accounts) => {
             await expectThrow( token.mint(accounts[1], 1));
             assert.equal(await token.totalSupply(), 1, "totalSupply incorrect")
         });
+
+        it('should throw an error when someone else other than the owner tries to stop the minting', async function () {
+            let token = await NudgeToken.new();
+            await token.setMintAgent(accounts[0], true);
+            await token.mint(accounts[1], 1);
+            await expectThrow(token.stopMintingForever({ from: accounts[3] }));
+        });
     });
 
     describe('lock', function() {

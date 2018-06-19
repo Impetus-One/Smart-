@@ -439,7 +439,7 @@ contract MintableToken is StandardToken, Ownable {
         _;
     }
 
-    function stopMintingForever(){
+    function stopMintingForever() onlyOwner {
         isMintingEnabled = false;
     }
 
