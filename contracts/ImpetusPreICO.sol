@@ -34,7 +34,7 @@ contract ImpetusPreICO is SafeMath, Ownable {
 
         bonusTokensSold += bonus;
         require(bonusTokensSold <= BONUS_TOKENS_LIMIT);
-        require(totalTokensSold <= ((nudgeToken.getSupplyCap() * 9) / 10));//changed TODO
+        require(totalTokensSold <= ((nudgeToken.getSupplyCap() * 9) / 10));
 
 
         nudgeToken.mint(msg.sender, numberOfTokens + bonus);
@@ -43,12 +43,29 @@ contract ImpetusPreICO is SafeMath, Ownable {
 
     }
 
-    function whiteListAddress(address addr, bool whitelisted, uint bonus, uint requiredEtherContribution) onlyOwner public {
-        require(bonus <= 30);
+    function whiteListAddressWithNoBonus(address addr, bool whitelisted, uint requiredEtherContribution) onlyOwner public {
         whitelistedAddresses[addr] = whitelisted;
-        bonuses[addr] = bonus;
+        bonuses[addr] = 0;
         requiredEtherContributions[addr] = requiredEtherContribution * 1 ether;
 
+    }
+
+    function whiteListAddressWith5PercentBonus(address addr, bool whitelisted, uint requiredEtherContribution) onlyOwner public {
+        whitelistedAddresses[addr] = whitelisted;
+        bonuses[addr] = 5;
+        requiredEtherContributions[addr] = requiredEtherContribution * 1 ether;
+    }
+
+    function whiteListAddressWith10PercentBonus(address addr, bool whitelisted, uint requiredEtherContribution) onlyOwner public {
+        whitelistedAddresses[addr] = whitelisted;
+        bonuses[addr] = 10;
+        requiredEtherContributions[addr] = requiredEtherContribution * 1 ether;
+    }
+
+    function whiteListAddressWith20PercentBonus(address addr, bool whitelisted, uint requiredEtherContribution) onlyOwner public {
+        whitelistedAddresses[addr] = whitelisted;
+        bonuses[addr] = 20;
+        requiredEtherContributions[addr] = requiredEtherContribution * 1 ether;
     }
 
     function finalizePreICO() public onlyOwner {
