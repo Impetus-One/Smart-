@@ -8,11 +8,11 @@ const expectThrow = require('./expectThrow.js')
 var NudgeToken = artifacts.require("NudgeToken");
 var ImpetusPreICO = artifacts.require("ImpetusPreICO");
 
-contract('ImpetusPreICO', async (accounts) => { 
+contract('ImpetusPreICO', async (accounts) => {
 
-    describe('pre-ico safety checks', function() {
+    describe('pre-ico safety checks', function () {
 
-        it('should return the correct number of tokens for the number of ETH contributed',async () => {
+        it('should return the correct number of tokens for the number of ETH contributed', async () => {
             let preIco = await ImpetusPreICO.new();
             preIco.setSmallestTokenUnitPriceInWei(web3.toWei(1000, "szabo") / (10 ** 8));
 
@@ -21,18 +21,18 @@ contract('ImpetusPreICO', async (accounts) => {
             assert.equal((await preIco.calculateNumberOfTokensFromWeisReceived(web3.toWei(1, "ether"))).toString(), new BigNumber(1000).mul(new BigNumber('10').pow(8)).toString());
         });
 
-        it('should only let the owner whitelist addresses',async () => {
+        it('should only let the owner whitelist addresses', async () => {
             let preIco = await ImpetusPreICO.new();
 
             await preIco.whiteListAddressWithNoBonus(accounts[0], true, 1);
 
             assert.equal(await preIco.whitelistedAddresses(accounts[0]), true);
 
-            await expectThrow( preIco.whiteListAddressWithNoBonus(accounts[1], true, 1,{ from: accounts[2]}));
+            await expectThrow(preIco.whiteListAddressWithNoBonus(accounts[1], true, 1, {from: accounts[2]}));
 
         });
 
-        it('should only allow a certain bonus',async () => {
+        it('should only allow a certain bonus', async () => {
             let preIco = await ImpetusPreICO.new();
             // 0%
             await preIco.whiteListAddressWithNoBonus(accounts[0], true, 1);
@@ -60,28 +60,28 @@ contract('ImpetusPreICO', async (accounts) => {
 
         });
 
-        it('should only allow contribution once the pre-ico is active',async () => {
+        it('should only allow contribution once the pre-ico is active', async () => {
             let preIco = await ImpetusPreICO.new();
             let token = await NudgeToken.new();
             await preIco.whiteListAddressWithNoBonus(accounts[0], true, 1);
             await token.setMintAgent(preIco.address, true);
             await preIco.setNudgeToken(token.address);
 
-            await expectThrow( preIco.send(web3.toWei(1, "ether" )));
+            await expectThrow(preIco.send(web3.toWei(1, "ether")));
 
             await preIco.startPreICO();
             preIco.setSmallestTokenUnitPriceInWei(web3.toWei(1, "ether") / (10 ** 8));
 
-            await preIco.send(web3.toWei(1, "ether" ));
+            await preIco.send(web3.toWei(1, "ether"));
 
             assert.equal((await preIco.getTotalTokensSold()).toString(), new BigNumber(1).mul(new BigNumber('10').pow(8)).toString());
 
             await preIco.finalizePreICO();
 
-            await expectThrow(  preIco.send(web3.toWei(1, "ether" )));
+            await expectThrow(preIco.send(web3.toWei(1, "ether")));
         });
 
-        it('should give the bonus',async () => {
+        it('should give the bonus', async () => {
             let preIco = await ImpetusPreICO.new();
             let token = await NudgeToken.new();
             await preIco.whiteListAddressWith20PercentBonus(accounts[0], true, 1);
@@ -92,16 +92,16 @@ contract('ImpetusPreICO', async (accounts) => {
 
             preIco.setSmallestTokenUnitPriceInWei(web3.toWei(1, "ether") / (10 ** 8));
 
-            await preIco.sendTransaction({ from: accounts[0], value: web3.toWei(1, "ether") });
+            await preIco.sendTransaction({from: accounts[0], value: web3.toWei(1, "ether")});
 
             assert.equal((await preIco.getTotalTokensSold()).toString(), new BigNumber(1.2).mul(new BigNumber('10').pow(8)).toString());
             assert.equal((await preIco.getNormalTokensSold()).toString(), new BigNumber(1).mul(new BigNumber('10').pow(8)).toString());
             assert.equal((await preIco.getBonusTokensSold()).toString(), new BigNumber(0.2).mul(new BigNumber('10').pow(8)).toString());
-            assert.equal((await token.balanceOf(accounts[0])).toString(), new BigNumber(1.2).mul(new BigNumber('10').pow(8)).toString() , "balance incorrect");
+            assert.equal((await token.balanceOf(accounts[0])).toString(), new BigNumber(1.2).mul(new BigNumber('10').pow(8)).toString(), "balance incorrect");
             assert.equal((await web3.eth.getBalance(accounts[1])).toString(), new BigNumber(web3.toWei(101, "ether")).toString(), "amount of ETH received incorrect");
         });
 
-        it('should not allow gas price of over 100 gwei',async () => {
+        it('should not allow gas price of over 100 gwei', async () => {
             let preIco = await ImpetusPreICO.new();
             let token = await NudgeToken.new();
             await preIco.whiteListAddressWith20PercentBonus(accounts[0], true, 1);
@@ -112,19 +112,27 @@ contract('ImpetusPreICO', async (accounts) => {
 
             preIco.setSmallestTokenUnitPriceInWei(web3.toWei(1, "ether") / (10 ** 8));
 
-            await expectThrow( preIco.sendTransaction({ from: accounts[0], value: web3.toWei(1, "ether"), gasPrice: web3.toWei(101, "gwei") }));
-            await preIco.sendTransaction({ from: accounts[0], value: web3.toWei(1, "ether"), gasPrice: web3.toWei(99, "gwei") });
+            await expectThrow(preIco.sendTransaction({
+                from: accounts[0],
+                value: web3.toWei(1, "ether"),
+                gasPrice: web3.toWei(101, "gwei")
+            }));
+            await preIco.sendTransaction({
+                from: accounts[0],
+                value: web3.toWei(1, "ether"),
+                gasPrice: web3.toWei(99, "gwei")
+            });
 
             assert.equal((await preIco.getTotalTokensSold()).toString(), new BigNumber(1.2).mul(new BigNumber('10').pow(8)).toString());
             assert.equal((await preIco.getNormalTokensSold()).toString(), new BigNumber(1).mul(new BigNumber('10').pow(8)).toString());
             assert.equal((await preIco.getBonusTokensSold()).toString(), new BigNumber(0.2).mul(new BigNumber('10').pow(8)).toString());
 
-            assert.equal((await token.balanceOf(accounts[0])).toString(), new BigNumber(1.2).mul(new BigNumber('10').pow(8)).toString() , "balance incorrect");
+            assert.equal((await token.balanceOf(accounts[0])).toString(), new BigNumber(1.2).mul(new BigNumber('10').pow(8)).toString(), "balance incorrect");
 
             assert.equal((await web3.eth.getBalance(accounts[3])).toString(), new BigNumber(web3.toWei(101, "ether")).toString(), "amount of ETH received incorrect");
         });
 
-        it('should allow only a certain number of tokens to be sold',async () => {
+        it('should allow only a certain number of tokens to be sold', async () => {
             let preIco = await ImpetusPreICO.new();
             let token = await NudgeToken.new();
             await preIco.whiteListAddressWithNoBonus(accounts[0], true, 1);
@@ -134,19 +142,31 @@ contract('ImpetusPreICO', async (accounts) => {
 
             preIco.setSmallestTokenUnitPriceInWei(web3.toWei(5, "wei"));
 
-            await expectThrow( preIco.sendTransaction({ from: accounts[0], value: web3.toWei(1, "ether"), gasPrice: web3.toWei(1, "gwei") }));
+            await expectThrow(preIco.sendTransaction({
+                from: accounts[0],
+                value: web3.toWei(1, "ether"),
+                gasPrice: web3.toWei(1, "gwei")
+            }));
 
             preIco.setSmallestTokenUnitPriceInWei(web3.toWei(6, "wei"));
 
-            await expectThrow( preIco.sendTransaction({ from: accounts[0], value: web3.toWei(1, "wei"), gasPrice: web3.toWei(1, "gwei") }));
+            await expectThrow(preIco.sendTransaction({
+                from: accounts[0],
+                value: web3.toWei(1, "wei"),
+                gasPrice: web3.toWei(1, "gwei")
+            }));
 
-            await preIco.sendTransaction({ from: accounts[0], value: web3.toWei(1, "ether"), gasPrice: web3.toWei(1, "gwei") });
+            await preIco.sendTransaction({
+                from: accounts[0],
+                value: web3.toWei(1, "ether"),
+                gasPrice: web3.toWei(1, "gwei")
+            });
 
             assert.equal((await preIco.getTotalTokensSold()).toString(), '166666666666666666');
 
         });
 
-        it('should allow only a certain number of bonus tokens to be sold',async () => {
+        it('should allow only a certain number of bonus tokens to be sold', async () => {
             let preIco = await ImpetusPreICO.new();
             let token = await NudgeToken.new();
             await preIco.whiteListAddressWith20PercentBonus(accounts[0], true, 2);
@@ -157,16 +177,24 @@ contract('ImpetusPreICO', async (accounts) => {
 
             preIco.setSmallestTokenUnitPriceInWei(web3.toWei(6, "wei"));
 
-            await expectThrow( preIco.sendTransaction({ from: accounts[0], value: web3.toWei(2, "ether"), gasPrice: web3.toWei(1, "gwei") }));
+            await expectThrow(preIco.sendTransaction({
+                from: accounts[0],
+                value: web3.toWei(2, "ether"),
+                gasPrice: web3.toWei(1, "gwei")
+            }));
 
-            await preIco.sendTransaction({ from: accounts[1], value: web3.toWei(1, "ether"), gasPrice: web3.toWei(1, "gwei") });
+            await preIco.sendTransaction({
+                from: accounts[1],
+                value: web3.toWei(1, "ether"),
+                gasPrice: web3.toWei(1, "gwei")
+            });
 
-            assert.equal((await preIco.getBonusTokensSold())>0, true);
+            assert.equal((await preIco.getBonusTokensSold()) > 0, true);
 
         });
     });
 
-    describe('full pre-ico flow', function() {
+    describe('full pre-ico flow', function () {
 
         it('should work', async () => {
             let token = await NudgeToken.new();
@@ -185,37 +213,37 @@ contract('ImpetusPreICO', async (accounts) => {
             await preIco.startPreICO();
 
 
-            await expectThrow( preIco.sendTransaction({ from: accounts[8], value: web3.toWei(1, "ether") }));
+            await expectThrow(preIco.sendTransaction({from: accounts[8], value: web3.toWei(1, "ether")}));
 
             assert.equal((await web3.eth.getBalance(accounts[9])).toString(), new BigNumber(web3.toWei(100, "ether")).toString(), "amount of ETH incorrect");
 
-            await preIco.sendTransaction({ from: accounts[0], value: web3.toWei(1, "ether") }); // contribute with 1 ETH
+            await preIco.sendTransaction({from: accounts[0], value: web3.toWei(1, "ether")}); // contribute with 1 ETH
 
             assert.equal((await preIco.getTotalTokensSold()).toString(), new BigNumber(80000).mul(new BigNumber('10').pow(8)).toString()); //should recevie 80 000 whole tokens
 
-            assert.equal((await token.balanceOf(accounts[0])).toString(), new BigNumber(80000).mul(new BigNumber('10').pow(8)).toString() , "balance incorrect");
+            assert.equal((await token.balanceOf(accounts[0])).toString(), new BigNumber(80000).mul(new BigNumber('10').pow(8)).toString(), "balance incorrect");
 
-            await preIco.sendTransaction({ from: accounts[1], value: web3.toWei(1, "ether") });
+            await preIco.sendTransaction({from: accounts[1], value: web3.toWei(1, "ether")});
             //should recevie 80 000 whole tokens and 30% bonus
             assert.equal((await preIco.getTotalTokensSold()).toString(), new BigNumber(160000 + (80000 * 20 / 100)).mul(new BigNumber('10').pow(8)).toString());
 
-            assert.equal((await token.balanceOf(accounts[1])).toString(), new BigNumber(80000 + (80000 * 20 / 100)).mul(new BigNumber('10').pow(8)).toString() , "balance incorrect");
+            assert.equal((await token.balanceOf(accounts[1])).toString(), new BigNumber(80000 + (80000 * 20 / 100)).mul(new BigNumber('10').pow(8)).toString(), "balance incorrect");
 
 
             assert.equal((await web3.eth.getBalance(accounts[9])).toString(), new BigNumber(web3.toWei(102, "ether")).toString(), "amount of ETH incorrect");
 
             //should not be able to transfer untill the token is released
-            await expectThrow( token.transfer(accounts[1], new BigNumber(80000).mul(new BigNumber('10').pow(8)), { from: accounts[0] }));
+            await expectThrow(token.transfer(accounts[1], new BigNumber(80000).mul(new BigNumber('10').pow(8)), {from: accounts[0]}));
             await preIco.finalizePreICO();
-            await expectThrow( preIco.sendTransaction({ from: accounts[1], value: web3.toWei(1, "ether") }));
+            await expectThrow(preIco.sendTransaction({from: accounts[1], value: web3.toWei(1, "ether")}));
             await token.stopMintingForever();
 
             await token.releaseTokenTransfer();
 
-            await token.transfer(accounts[2], new BigNumber(80000 + (80000 * 20 / 100)).mul(new BigNumber('10').pow(8)), { from: accounts[1] });
-            assert.equal((await token.balanceOf(accounts[1])).toString(), 0 , "balance incorrect");
+            await token.transfer(accounts[2], new BigNumber(80000 + (80000 * 20 / 100)).mul(new BigNumber('10').pow(8)), {from: accounts[1]});
+            assert.equal((await token.balanceOf(accounts[1])).toString(), 0, "balance incorrect");
 
-            assert.equal((await token.balanceOf(accounts[2])).toString(), new BigNumber(80000 + (80000 * 20 / 100)).mul(new BigNumber('10').pow(8)).toString() , "balance incorrect");
+            assert.equal((await token.balanceOf(accounts[2])).toString(), new BigNumber(80000 + (80000 * 20 / 100)).mul(new BigNumber('10').pow(8)).toString(), "balance incorrect");
 
         });
     });
